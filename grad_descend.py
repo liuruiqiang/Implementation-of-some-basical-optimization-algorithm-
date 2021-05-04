@@ -157,9 +157,9 @@ class optimizer(object):
         
         '''
         lens = len(x0)
-        symx = self.get_symx(lens)
-        sym_fx,npfx = self.unknown_f(symx,x0)
-        grad0 = self.unknown_g(symx,x0,sym_fx)
+        symx = self.get_symx(lens)#根据变量个数得到符号变量
+        sym_fx,npfx = self.unknown_f(symx,x0)#得到函数符号表达式以及函数数值
+        grad0  = self.unknown_g(symx,x0,sym_fx)#得到函数梯度数值
         delta = np.sum(grad0**2)
         i = 1
         x = x0

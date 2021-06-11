@@ -3,11 +3,12 @@ import matplotlib.pyplot as plt
 import sympy as sym
 
 class optimizer(object):
-    def __init__(self,f_mode='f',rph=0.1,init_alpha=1,t=2):
+    def __init__(self,f_mode='f',rph=0.1,init_alpha=0.1,t=2,belta=0.9):
         self.f_mode = f_mode
         self.rph = rph
         self.init_alpha = init_alpha
         self.t = t
+        self.belta = belta
     
     def search_alpha(self,x,d,rph,init_alpha,coe):
         '''
@@ -47,7 +48,7 @@ class optimizer(object):
 
     def unknownf_search_alpha(self,symx,x,d,rph,init_alpha,coe):
         '''
-        针对第五题这种函数变量不定的情况利用Goldstein原则对alpha进行非精确线性搜索
+        针对函数变量不定的情况利用Goldstein原则对alpha进行非精确线性搜索
         '''
         flag = False
         a = 0
@@ -146,7 +147,6 @@ class optimizer(object):
         x1 ,x2 = x[0],x[1]
         g1 = 2*(x1**3 - x2)*3*x1**2 - 8*(x2-x1)**3
         g2 = 8 *(x2 - x1)**3 - 2*(x1**3 - x2)
-        
         results = np.array([g1,g2])
         return results
 
@@ -170,11 +170,15 @@ class optimizer(object):
         record_f[0,0] = npfx
         record_g[:,0] = grad0
         record_normG[0,0] = np.linalg.norm(grad0)
+        v = np.zeros((lens,))
         while(i < epoches and delta >eps):
             gx = self.unknown_g(symx,x,sym_fx)
             d = -gx
+            # print('shape:',d.shape,v.shape)
+            v = self.belta * v + (1 - self.belta) * d
+            #线性搜索步长
             alpha = self.unknownf_search_alpha(symx,x,d,self.rph,self.init_alpha,self.t)
-            x = x + alpha * d
+            x = x + alpha * v
             record_x[:,i] = x
             grad = self.unknown_g(symx,x,sym_fx)
             record_normG[0,i] = np.linalg.norm(grad)
@@ -183,7 +187,7 @@ class optimizer(object):
             record_f[0,i] = npfx
             record_g[:,i] = grad
             delta = np.sum(grad**2)
-            # print("delta:",delta)
+            print("delta:",delta)
             i += 1
         return x,i,record_f[:,:i],record_g[:,:i],record_x[:,:i],record_normG[:,:i]
 
@@ -202,45 +206,39 @@ class optimizer(object):
 
         record_f[0,0] = fx0
         record_g[:,0] = grad0
+        v = np.zeros((lens,))
         while(i < epoches and delta >eps):
             d = -self.g(x)
-            gx = self.g(x)
-            
-            alpha = self.search_alpha(x,d,self.rph,self.init_alpha,self.t)
-            x = x + alpha * d
+            v = self.belta * v + (1 - self.belta)*d
+            x = x + self.init_alpha * v
             grad = self.g(x)
             fx = self.f(x)
             record_f[0,i] = fx
             record_g[:,i] = grad
             delta = np.sum(grad **2)
-            # print("delta:",delta)
+            print("delta:",delta)
             i += 1
 
         return x,i,record_f[:,:i],record_g[:,:i]
 
     
-    def __call__(self,x0):
+    def __call__(self,x0,epoches=1000):
         if self.f_mode == 'f':
             final_x,epoches,records_f,records_g = self.gradient_descend(x0)
             return final_x,epoches,records_f,records_g
         else:
-            final_x,epoches,records_f,records_g,records_x,records_normG = self.unknownf_gradient_descend(x0)
+            final_x,epoches,records_f,records_g,records_x,records_normG = self.unknownf_gradient_descend(x0,epoches=epoches)
             return final_x,epoches,records_f,records_g,records_x,records_normG
 
 
-
 if __name__ == '__main__':
-    x0 = np.array([2.,3.])
-    opts = optimizer()
-    final_x,epoches,records_f,records_g = opts(x0)#调用optimizer中的__call__方法
-    print('第四题最优点和最优值分别为：',final_x,records_f[:,-1])
     lens = 2
     x0 = np.zeros((lens,))
     x0[0] = 1
-    opts = optimizer(f_mode='unknown')#针对函数变量个数不定的情况f_mode定为'unknown'
+    opts = optimizer(f_mode='unknown',belta=0.5)#针对函数变量个数不定的情况f_mode定为'unknown'
     final_x,epoches,records_f,records_g,records_x,record_normG = opts(x0)#调用optimizer中的__call__方法
-    print('第五题N=2时最优点和最优值分别为：',final_x,records_f[:,-1])
-    
+    print('第一题N=2时最优点和最优值分别为：',final_x,records_f[:,-1])
+
     #绘制等高线和更新点
     def height(x, y):
         return (1-x)**2 +100 *(y-x**2)**2
@@ -264,8 +262,8 @@ if __name__ == '__main__':
     x0 = np.zeros((lens,))
     x0[0] = 1
     opts = optimizer(f_mode='unknown')
-    final_x,epoches,records_f,records_g,records_x,record_normG = opts(x0)
-    print('第五题N=7时最优点和最优值分别为：',final_x,records_f[:,-1])
+    final_x,epoches,records_f,records_g,records_x,record_normG = opts(x0,epoches=200)
+    print('第一题N=7时最优点和最优值分别为：',final_x,records_f[:,-1])
     if epoches > 500:
         epoches = 500
     epos = np.linspace(0,epoches,epoches)
@@ -281,28 +279,7 @@ if __name__ == '__main__':
     plt.text(-0.5,3,"grad_descend",fontsize=20,color="red")
     plt.show()
 
-    #N=20时求解最优解并显示函数值和梯度值
-    lens = 20
-    x0 = np.zeros((lens,))
-    x0[0] = 1
-    opts = optimizer(f_mode='unknown')
-    final_x,epoches,records_f,records_g,records_x,record_normG = opts(x0)
-    print('第五题N=20时最优点和最优值分别为：',final_x,records_f[:,-1])
-    if epoches > 800:
-        epoches = 800
-    epos = np.linspace(0,epoches,epoches)
-    plt.subplot(1,2,1)
-    plt.plot(epos,records_f[0,:epoches],label='function values')
-    plt.xlabel('epoch')
-    plt.ylabel('function values')
-    plt.text(-0.5,3,"function values",fontsize=20,color="red")
-    plt.subplot(1,2,2)
-    plt.plot(epos,record_normG[0,:epoches],label='function gradients')
-    plt.xlabel('epoch')
-    plt.ylabel('function gradients')
-    plt.text(-0.5,3,"grad_descend",fontsize=20,color="red")
-    plt.show()
- 
+
 
 
 

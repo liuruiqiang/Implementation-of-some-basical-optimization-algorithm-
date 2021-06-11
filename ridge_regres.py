@@ -30,7 +30,6 @@ if __name__ == "__main__":
     x,y = np.array(data.iloc[:,:-1]),np.array(data.iloc[:,-1])
     y = np.expand_dims(y,1)
     x_mean = np.mean(x,0)
-
     x_var = np.var(x,0)
     y_mean = np.mean(y,0)
     # print(y_mean)

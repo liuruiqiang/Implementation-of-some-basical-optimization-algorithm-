@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 class optimizer(object):
     def __init__(self,f_mode='f',rph=0.1,init_alpha=1,t=2):
-        self.f_mode = f_mode1
+        self.f_mode = f_mode
         self.rph = rph
         self.init_alpha = init_alpha
         self.t = t
@@ -45,7 +45,7 @@ class optimizer(object):
         return alpha
 
     def unknownf_search_alpha(self,symx,x,d,rph,init_alpha,coe):
-       '''
+        '''
         针对第五题这种函数变量不定的情况利用Goldstein原则对alpha进行非精确线性搜索
         '''
         flag = False
@@ -81,7 +81,7 @@ class optimizer(object):
         return alpha
 
     def get_symx(self,lens):
-         '''
+        '''
         根据函数变量个数给出符号元素
         '''
         result_x = 'x:'+str(lens+1)
@@ -110,7 +110,7 @@ class optimizer(object):
         return fx,npfx
 
     def unknown_g(self,x,npx,fx):
-         '''
+        '''
         根据符号变量元素和实数值以及函数表达式给出最后的梯度数值结果
         :param x :sympy的符号变量元素
         :param npx :numpy类型的变量数值
